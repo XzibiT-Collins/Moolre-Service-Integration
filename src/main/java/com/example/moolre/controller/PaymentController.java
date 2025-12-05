@@ -23,4 +23,9 @@ public class PaymentController {
     public ResponseEntity<String> initiatePayment(@Valid @RequestBody PaymentRequest request){
         return ResponseEntity.ok(paymentService.initiatePayment(request));
     }
+
+    @GetMapping("/status/{referenceId}")
+    public ResponseEntity<String> getPaymentStatus(@PathVariable String referenceId){
+        return ResponseEntity.ok(paymentService.getPaymentStatus(referenceId));
+    }
 }

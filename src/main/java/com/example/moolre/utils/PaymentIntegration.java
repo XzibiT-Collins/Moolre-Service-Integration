@@ -1,13 +1,12 @@
 package com.example.moolre.utils;
 
-import com.example.moolre.dto.request.InitiatePaymentAPIRequest;
-import com.example.moolre.dto.request.PayeeValidationRequest;
-import com.example.moolre.dto.request.PaymentNameValidationAPIRequest;
-import com.example.moolre.dto.request.PaymentRequest;
+import com.example.moolre.dto.request.*;
 import com.example.moolre.dto.response.MoolreAPIResponse;
 import com.example.moolre.enums.Channel;
 import com.example.moolre.enums.Currency;
 import com.example.moolre.exception.BadRequestException;
+import com.example.moolre.model.Transaction;
+import com.example.moolre.repository.TransactionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +36,7 @@ public class PaymentIntegration {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final TransactionRepository transactionRepository;
 
     public MoolreAPIResponse validatePayee(PayeeValidationRequest request){
         log.info("Validating payee: {}", request);
@@ -103,6 +103,8 @@ public class PaymentIntegration {
                 .accountnumber(accountNumber)
                 .build();
 
+        saveTransaction(body);
+
         try{
             return webClient
                     .post()
@@ -127,5 +129,56 @@ public class PaymentIntegration {
             log.error("Error initiating payment: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    public MoolreAPIResponse getPaymentStatus(String reference){
+        PaymentStatusAPIRequest body = PaymentStatusAPIRequest
+                .builder()
+                .type(1)
+                .idtype(1)
+                .id(reference)
+                .accountnumber(accountNumber)
+                .build();
+
+        try{
+            return webClient
+                    .post()
+                    .uri("/open/transact/status")
+                    .header("X-API-USER", moolreUsername)
+                    .header("X-API-KEY", secretKey)
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(responseBody->{
+                        log.info("Raw API response: {}", responseBody);
+                        try{
+                            return objectMapper.readValue(responseBody,MoolreAPIResponse.class);
+                        }catch (Exception e){
+                            throw new BadRequestException("Error parsing response");
+                        }
+                    }).block();
+        }catch (WebClientResponseException e){
+            log.error("Error getting payment status: {}", e.getMessage(), e);
+            throw new BadRequestException("Error getting payment status");
+        }catch (Exception e){
+            log.error("Error getting payment status: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private void saveTransaction(InitiatePaymentAPIRequest body) {
+        Transaction transaction = Transaction
+                .builder()
+                .type(body.type())
+                .channel(body.channel())
+                .currency(body.currency())
+                .amount(body.amount())
+                .receiver(body.receiver())
+                .reference(body.reference())
+                .sublistid(body.sublistid())
+                .externalref(body.externalref())
+                .accountnumber(body.accountnumber())
+                .build();
+        transactionRepository.save(transaction);
     }
 }

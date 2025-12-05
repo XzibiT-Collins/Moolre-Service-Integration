@@ -6,4 +6,5 @@ import com.example.moolre.dto.request.PaymentRequest;
 public interface PaymentService {
     String validatePayee(PayeeValidationRequest request);
     String initiatePayment(PaymentRequest request);
+    String getPaymentStatus(String ref);
 }
