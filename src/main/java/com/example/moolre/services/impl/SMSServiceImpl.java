@@ -3,7 +3,7 @@ package com.example.moolre.services.impl;
 import com.example.moolre.dto.request.MessageRequest;
 import com.example.moolre.dto.response.MessageResponse;
 import com.example.moolre.dto.response.MessageStatusResponse;
-import com.example.moolre.dto.response.SMSResponse;
+import com.example.moolre.dto.response.MoolreAPIResponse;
 import com.example.moolre.enums.SMSSendType;
 import com.example.moolre.exception.BadRequestException;
 import com.example.moolre.model.Message;
@@ -38,7 +38,7 @@ public class SMSServiceImpl implements SMSService {
                 .ref(smsRequest.ref())
                 .build();
 
-        SMSResponse response = null;
+        MoolreAPIResponse response = null;
         if(sendType.equals(SMSSendType.POST)){
             log.info("Sending SMS via POST");
             response = smsIntegration.sendSMS(List.of(smsRequest));

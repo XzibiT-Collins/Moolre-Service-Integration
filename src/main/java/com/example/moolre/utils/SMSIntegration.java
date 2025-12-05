@@ -4,7 +4,7 @@ import com.example.moolre.dto.request.MessageRequest;
 import com.example.moolre.dto.request.SMSRequest;
 import com.example.moolre.dto.request.SMSStatusRequest;
 import com.example.moolre.dto.response.MessageStatusResponse;
-import com.example.moolre.dto.response.SMSResponse;
+import com.example.moolre.dto.response.MoolreAPIResponse;
 import com.example.moolre.exception.BadRequestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class SMSIntegration {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    public SMSResponse sendSMS(List<MessageRequest> msgRequest){
+    public MoolreAPIResponse sendSMS(List<MessageRequest> msgRequest){
         try{
             SMSRequest smsRequest = SMSRequest
                     .builder()
@@ -48,7 +48,7 @@ public class SMSIntegration {
                     .map(responseBody -> {
                         log.info("Raw SMS API response: {}", responseBody);
                         try {
-                            return objectMapper.readValue(responseBody, SMSResponse.class);
+                            return objectMapper.readValue(responseBody, MoolreAPIResponse.class);
                         } catch (Exception e) {
                             log.error("Failed to parse SMS response: {}", e.getMessage());
                             throw new BadRequestException("Failed to parse SMS response");
@@ -97,7 +97,7 @@ public class SMSIntegration {
         }
     }
 
-    public SMSResponse sendSMSViaQueryParams(MessageRequest request){
+    public MoolreAPIResponse sendSMSViaQueryParams(MessageRequest request){
         try{
             return webClient
                     .get()
@@ -113,7 +113,7 @@ public class SMSIntegration {
                     .map(responseBody->{
                         log.info("Raw SMS API response: {}", responseBody);
                         try{
-                            return objectMapper.readValue(responseBody, SMSResponse.class);
+                            return objectMapper.readValue(responseBody, MoolreAPIResponse.class);
                         }catch (Exception e){
                             log.error("Failed to parse SMS response: {}", e.getMessage());
                             throw new BadRequestException("Failed to parse SMS response");
