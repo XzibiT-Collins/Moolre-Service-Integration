@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
     private final PaymentService paymentService;
 
-    @GetMapping("/validate-payee")
+    @PostMapping("/validate-payee")
     public ResponseEntity<String> validatePayee(@Valid @RequestBody PayeeValidationRequest request){
         return ResponseEntity.ok(paymentService.validatePayee(request));
     }

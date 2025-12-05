@@ -80,7 +80,7 @@ public class SMSServiceImpl implements SMSService {
 
     @Override
     public Page<Message> getAllMessages() {
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0,50);
         return messageRepository.findAll(pageable);
     }
 }
