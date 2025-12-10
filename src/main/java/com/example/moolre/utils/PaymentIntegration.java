@@ -10,6 +10,7 @@ import com.example.moolre.repository.TransactionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.service.GenericResponseService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentIntegration {
 
+    private final GenericResponseService responseBuilder;
     @Value("${moolre.api.secret.key}")
     private String secretKey;
 
@@ -56,7 +58,7 @@ public class PaymentIntegration {
                 .accountnumber(accountNumber)
                 .build();
         try{
-            return webClient
+            MoolreAPIResponse response = webClient
                     .post()
                     .uri("/open/transact/validate")
                     .header("X-API-USER", moolreUsername)
@@ -72,6 +74,7 @@ public class PaymentIntegration {
                             throw new BadRequestException("Error parsing response");
                         }
                     }).block();
+            return handleApiStatusError(response);
         }catch (WebClientResponseException e){
             log.error("Error validating payee: {}", e.getMessage(), e);
             throw new BadRequestException("Error validating payee");
@@ -106,7 +109,7 @@ public class PaymentIntegration {
         saveTransaction(body);
 
         try{
-            return webClient
+            MoolreAPIResponse response = webClient
                     .post()
                     .uri("/open/transact/transfer")
                     .header("X-API-KEY", secretKey)
@@ -122,6 +125,7 @@ public class PaymentIntegration {
                             throw new BadRequestException("Error parsing response");
                         }
                     }).block();
+            return handleApiStatusError(response);
         }catch (WebClientResponseException e){
             log.error("Error initiating payment: {}", e.getMessage(), e);
             throw new BadRequestException("Error initiating payment");
@@ -141,7 +145,7 @@ public class PaymentIntegration {
                 .build();
 
         try{
-            return webClient
+            MoolreAPIResponse response = webClient
                     .post()
                     .uri("/open/transact/status")
                     .header("X-API-USER", moolreUsername)
@@ -157,6 +161,7 @@ public class PaymentIntegration {
                             throw new BadRequestException("Error parsing response");
                         }
                     }).block();
+            return handleApiStatusError(response);
         }catch (WebClientResponseException e){
             log.error("Error getting payment status: {}", e.getMessage(), e);
             throw new BadRequestException("Error getting payment status");
@@ -180,5 +185,18 @@ public class PaymentIntegration {
                 .accountnumber(body.accountnumber())
                 .build();
         transactionRepository.save(transaction);
+    }
+
+    protected MoolreAPIResponse handleApiStatusError(MoolreAPIResponse response){
+        try{
+            if(response.status()== 1){
+                return response;
+            }else{
+                throw new BadRequestException(response.message());
+            }
+        }catch (Exception e){
+            log.error("Error occurred while processing response: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 }

@@ -38,7 +38,7 @@ public class SMSIntegration {
                     .messages(msgRequest)
                     .build();
 
-            return webClient
+            MoolreAPIResponse response = webClient
                     .post()
                     .uri("/open/sms/send")
                     .header("X-API-VASKEY", vasKey)
@@ -55,6 +55,7 @@ public class SMSIntegration {
                         }
                     })
                     .block();
+            return handleApiStatusError(response);
         } catch (WebClientResponseException e) {
             log.error("Error sending SMS - Status: {}, Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
             throw new BadRequestException(e.getResponseBodyAsString());
@@ -71,6 +72,17 @@ public class SMSIntegration {
                 .ref(refs)
                 .build();
         try{
+            String contentType = webClient
+                    .post()
+                    .uri("/open/sms/query")
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block()
+                    .getHeaders()
+                    .getContentType()
+                    .toString();
+
+            log.info("API ContentType: {}", contentType);
             return webClient
                     .post()
                     .uri("/open/sms/query")
@@ -99,7 +111,7 @@ public class SMSIntegration {
 
     public MoolreAPIResponse sendSMSViaQueryParams(MessageRequest request){
         try{
-            return webClient
+            MoolreAPIResponse response = webClient
                     .get()
                     .uri(uriBuilder -> uriBuilder.path("/open/sms/send")
                             .queryParam("type", 1)
@@ -120,12 +132,26 @@ public class SMSIntegration {
                         }
                     })
                     .block();
+            return handleApiStatusError(response);
 
         }catch(WebClientResponseException e){
             log.error("Error sending SMS: {}", e.getMessage(), e);
             throw new BadRequestException("Error sending SMS");
         }catch (Exception e){
             log.error("Error sending SMS: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    protected MoolreAPIResponse handleApiStatusError(MoolreAPIResponse response){
+        try{
+            if(response.status()== 1){
+                return response;
+            }else{
+                throw new BadRequestException(response.message());
+            }
+        }catch (Exception e){
+            log.error("Error occurred while processing response: {}", e.getMessage(), e);
             throw e;
         }
     }

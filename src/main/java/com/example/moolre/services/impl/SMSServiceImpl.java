@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -28,7 +29,7 @@ public class SMSServiceImpl implements SMSService {
     private final MessageRepository messageRepository;
 
     @Override
-    public MessageResponse sendSMS(MessageRequest smsRequest, SMSSendType sendType) {
+    public String sendSMS(MessageRequest smsRequest, SMSSendType sendType) {
         log.info("Sending SMS: {}", smsRequest);
         log.info("Saving message to DB with ref {}", smsRequest.ref());
         Message message = Message
@@ -54,9 +55,7 @@ public class SMSServiceImpl implements SMSService {
 
         messageRepository.save(message);
 
-        return MessageResponse.builder()
-                .message(response.message())
-                .build();
+        return response.message();
     }
 
     @Override
@@ -67,7 +66,8 @@ public class SMSServiceImpl implements SMSService {
     @Override
     public String getSMSStatus(String ref) {
         MessageStatusResponse response = smsIntegration.getSMSStatus(List.of(ref));
-        String status = response.data().getFirst().status();
+        if(response.data().isEmpty()) return "SMS not found";
+        String status = Optional.ofNullable(response.data().getFirst().status()).orElse("0");
 
         return switch (status) {
             case "0" -> "UNKNOWN";

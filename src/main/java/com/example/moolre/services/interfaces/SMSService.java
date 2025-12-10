@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface SMSService {
-    MessageResponse sendSMS(MessageRequest smsRequest, SMSSendType sendType);
+    String sendSMS(MessageRequest smsRequest, SMSSendType sendType);
     MessageResponse sendBulkSMS(List<MessageRequest> smsRequest);
     String getSMSStatus(String ref);
     Page<Message> getAllMessages();

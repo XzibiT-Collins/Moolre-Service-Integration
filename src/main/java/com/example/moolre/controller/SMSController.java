@@ -20,7 +20,7 @@ public class SMSController {
     private final SMSService smsService;
 
     @PostMapping("/send")
-    public ResponseEntity<MessageResponse> sendSMS(@Valid @RequestBody MessageRequest smsRequest,@Valid @RequestParam(value = "sendType", defaultValue = "POST")SMSSendType sendType){
+    public ResponseEntity<String> sendSMS(@Valid @RequestBody MessageRequest smsRequest,@Valid @RequestParam(value = "sendType", defaultValue = "POST")SMSSendType sendType){
         return ResponseEntity.ok(smsService.sendSMS(smsRequest,sendType));
     }
 
